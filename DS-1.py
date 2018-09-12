@@ -1,19 +1,3 @@
-
-# coding: utf-8
-
-# In[1]:
-
-
-from IPython import get_ipython
-get_ipython().magic('reset -sf')
-
-import warnings
-warnings.filterwarnings('ignore')
-
-
-# In[2]:
-
-
 from sklearn.metrics import confusion_matrix
 import itertools
 import pandas as pd
@@ -51,17 +35,11 @@ pd.set_option('display.max_columns', 50)
 pd.set_option('display.max_columns', 100)
 
 
-# In[3]:
-
-
 # read the input files and look at the top few lines #
 data_path = "/Users/venkatasravankanukolanu/Documents/Data Files/home_credit_kaggle/"
 app_df= pd.read_csv(data_path+"application_train.csv")
 app_test= pd.read_csv(data_path+"application_test.csv")
 app_df.head(2)
-
-
-# In[4]:
 
 
 print("Number of loan applications in training data:",app_df.shape[0])
@@ -70,22 +48,12 @@ print("Number of features in test data:",app_test.shape[1])
 print("Number of features in training data:",(app_df.shape[1]-1))
 
 
-# In[5]:
-
-
 app_df['CODE_GENDER'].replace('XNA',np.nan, inplace=True)
 app_df['CODE_GENDER'].value_counts()
 
 
-# In[6]:
-
-
 app_test['CODE_GENDER'].replace('XNA',np.nan, inplace=True)
 app_test['CODE_GENDER'].value_counts()
-
-
-# In[7]:
-
 
 app_df['ORGANIZATION_TYPE'].replace('XNA',np.nan, inplace=True)
 app_test['ORGANIZATION_TYPE'].replace('XNA',np.nan, inplace=True)
@@ -98,9 +66,6 @@ app_test['DAYS_LAST_PHONE_CHANGE'].replace(0, np.nan, inplace=True)
 
 app_df['DAYS_LAST_PHONE_CHANGE'].replace(0, np.nan, inplace=True)
 app_test['DAYS_LAST_PHONE_CHANGE'].replace(0, np.nan, inplace=True)
-
-
-# In[8]:
 
 
 app_df['annuity_income_percentage'] = app_df['AMT_ANNUITY'] / app_df['AMT_INCOME_TOTAL']
@@ -152,55 +117,29 @@ app_test['credit_per_child'] = app_test['AMT_CREDIT'] / (1 + app_test['CNT_CHILD
 app_test['credit_per_non_child'] = app_test['AMT_CREDIT'] / app_test['cnt_non_child']
 app_test['external_sources_weighted'] = app_test.EXT_SOURCE_1 * 2 + app_test.EXT_SOURCE_2 * 3 + app_test.EXT_SOURCE_3 * 4
 
-
-# In[9]:
-
-
 # Assuming 62 is the general average age of retirement and 365.24 days in a year
 app_df['retirement_age'] = (app_df['DAYS_BIRTH'] < -22645).astype(int)
 app_df['retirement_age'].value_counts()
-
-
-# In[10]:
-
 
 # Assuming 4 years is the tenure of long-term employment and 365.24 days in a year
 app_df['longterm_employment'] = (app_df['DAYS_EMPLOYED'] < -1460).astype(int)
 app_df['longterm_employment'].value_counts()
 
-
-# In[11]:
-
-
 app_test['retirement_age'] = (app_test['DAYS_BIRTH'] < -22645).astype(int)
 app_test['longterm_employment'] = (app_test['DAYS_EMPLOYED'] < -1460).astype(int)
 
 
-# In[12]:
-
-
 app_df['is_insured'] = app_df.apply(lambda row: 1 if row['AMT_GOODS_PRICE']<row['AMT_CREDIT'] else 0 if row['AMT_GOODS_PRICE']>=row['AMT_CREDIT'] else np.nan, axis=1)
 app_test['is_insured'] = app_test.apply(lambda row: 1 if row['AMT_GOODS_PRICE']<row['AMT_CREDIT'] else 0 if row['AMT_GOODS_PRICE']>=row['AMT_CREDIT'] else np.nan, axis=1)
-
-
-# In[13]:
-
 
 for function_name in ['min', 'max', 'sum', 'mean', 'nanmedian','nanmean']:
     app_df['external_sources_{}'.format(function_name)] = eval('np.{}'.format(function_name))(
         app_df[['EXT_SOURCE_1', 'EXT_SOURCE_2', 'EXT_SOURCE_3','external_sources_weighted']], axis=1)
 
 
-# In[14]:
-
-
 for function_name in ['min', 'max', 'sum', 'mean', 'nanmedian','nanmean']:
     app_test['external_sources_{}'.format(function_name)] = eval('np.{}'.format(function_name))(
         app_test[['EXT_SOURCE_1', 'EXT_SOURCE_2', 'EXT_SOURCE_3','external_sources_weighted']], axis=1)
-
-
-# In[15]:
-
 
 AGGREGATION_RECIPIES = [
     (['CODE_GENDER', 'NAME_EDUCATION_TYPE'], [('AMT_ANNUITY', 'max'),
@@ -253,10 +192,6 @@ AGGREGATION_RECIPIES = [
                                         ('TOTALAREA_MODE', 'mean')])
 ]
 
-
-# In[16]:
-
-
 groupby_aggregate_names = []
 for groupby_cols, specs in tqdm(AGGREGATION_RECIPIES):
     group_object = app_df.groupby(groupby_cols)
@@ -268,9 +203,6 @@ for groupby_cols, specs in tqdm(AGGREGATION_RECIPIES):
                               on=groupby_cols,
                               how='left')
         groupby_aggregate_names.append(groupby_aggregate_name)
-
-
-# In[17]:
 
 
 ## For adding the aggregate features on test, 
@@ -288,9 +220,6 @@ for groupby_cols, specs in tqdm(AGGREGATION_RECIPIES):
         groupby_aggregate_names.append(groupby_aggregate_name)
 
 
-# In[18]:
-
-
 for groupby_cols, specs in tqdm(AGGREGATION_RECIPIES):
     for select, agg in tqdm(specs):
         if agg in ['mean','median','max','min']:
@@ -300,9 +229,6 @@ for groupby_cols, specs in tqdm(AGGREGATION_RECIPIES):
 
             app_df[diff_name] = app_df[select] - app_df[groupby_aggregate_name] 
             app_df[abs_diff_name] = np.abs(app_df[select] - app_df[groupby_aggregate_name]) 
-
-
-# In[19]:
 
 
 for groupby_cols, specs in tqdm(AGGREGATION_RECIPIES):
@@ -316,14 +242,8 @@ for groupby_cols, specs in tqdm(AGGREGATION_RECIPIES):
             app_test[abs_diff_name] = np.abs(app_test[select] - app_df[groupby_aggregate_name]) 
 
 
-# In[20]:
-
 
 app_df.to_csv(data_path+"app_df.csv", index = False)
-
-
-# In[21]:
-
 
 app_test.to_csv(data_path+"app_test.csv", index = False)
 
