@@ -129,7 +129,6 @@ app_df_v2=app_df.merge(app_bureau,how='left',on='SK_ID_CURR')
 
 app_test_v2=app_test.merge(app_bureau,how='left',on='SK_ID_CURR')
 
-
 ### Total active annuity including current app
 app_df_v2['bur_active_annuity']=(app_df_v2['bur_sum_annuity_active']+app_df_v2['AMT_ANNUITY'])
 ### Total Debt to Income ratio
