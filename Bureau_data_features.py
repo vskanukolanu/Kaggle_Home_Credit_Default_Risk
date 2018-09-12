@@ -1,19 +1,3 @@
-
-# coding: utf-8
-
-# In[2]:
-
-
-from IPython import get_ipython
-get_ipython().magic('reset -sf')
-
-import warnings
-warnings.filterwarnings('ignore')
-
-
-# In[3]:
-
-
 from sklearn.metrics import confusion_matrix
 import itertools
 import pandas as pd
@@ -50,42 +34,22 @@ get_ipython().run_line_magic('matplotlib', 'inline')
 pd.set_option('display.max_columns', 50)
 pd.set_option('display.max_columns', 100)
 
-
-# In[4]:
-
-
 # read the input files and look at the top few lines #
 data_path = "/Users/venkatasravankanukolanu/Documents/Data Files/home_credit_kaggle/"
 app_df= pd.read_csv(data_path+"app_df.csv")
 app_test= pd.read_csv(data_path+"app_test.csv")
 app_df.head(2)
 
-
-# In[5]:
-
-
 app_df.shape,app_test.shape
-
-
-# In[6]:
-
 
 # read the input files and look at the top few lines #
 data_path = "/Users/venkatasravankanukolanu/Documents/Data Files/home_credit_kaggle/"
 bur_df= pd.read_csv(data_path+"bureau.csv")
 
-
-# In[7]:
-
-
 bur_df['DAYS_CREDIT_ENDDATE'][bur_df['DAYS_CREDIT_ENDDATE'] < -40000] = np.nan
 bur_df['DAYS_CREDIT_UPDATE'][bur_df['DAYS_CREDIT_UPDATE'] < -40000] = np.nan
 bur_df['DAYS_ENDDATE_FACT'][bur_df['DAYS_ENDDATE_FACT'] < -40000] = np.nan
 bur_df['AMT_CREDIT_SUM_LIMIT'][bur_df['AMT_CREDIT_SUM_LIMIT']<0] = np.nan
-
-
-# In[8]:
-
 
 ###Number of previous credits
 bureau_num_pre_Credits=bur_df.groupby(['SK_ID_CURR'])['SK_ID_BUREAU'].nunique().reset_index()
@@ -150,16 +114,9 @@ bureau_sum_annuity_StatusType.columns=['SK_ID_CURR','bur_sum_annuity_active','bu
 temp=bur_df[bur_df['CREDIT_DAY_OVERDUE']>90]
 bureau_num_DPD_90=temp[['SK_ID_CURR', 'CREDIT_DAY_OVERDUE']].groupby(by = ['SK_ID_CURR'])['CREDIT_DAY_OVERDUE'].count().reset_index().rename(index=str, columns={'CREDIT_DAY_OVERDUE': 'num_DPD_90'})
 
-
-# In[9]:
-
-
 list_ids_train = pd.DataFrame({'SK_ID_CURR':app_df['SK_ID_CURR'].unique()})
 list_ids_test = pd.DataFrame({'SK_ID_CURR':app_test['SK_ID_CURR'].unique()})
 list_ids=pd.concat([list_ids_train, list_ids_test], ignore_index=True)
-
-
-# In[10]:
 
 
 app_bureau_list=[list_ids,bureau_num_pre_Credits,bureau_num_credits_CurType,bureau_num_credits_StatusType,bureau_num_credits_CreditType
@@ -168,20 +125,9 @@ app_bureau_list=[list_ids,bureau_num_pre_Credits,bureau_num_credits_CurType,bure
                bureau_sum_annuity_StatusType,bureau_num_DPD_90]
 app_bureau = reduce(lambda left,right: pd.merge(left,right,how='left',on='SK_ID_CURR'), app_bureau_list)
 
-
-# In[11]:
-
-
 app_df_v2=app_df.merge(app_bureau,how='left',on='SK_ID_CURR')
 
-
-# In[12]:
-
-
 app_test_v2=app_test.merge(app_bureau,how='left',on='SK_ID_CURR')
-
-
-# In[13]:
 
 
 ### Total active annuity including current app
@@ -229,10 +175,6 @@ app_test_v2['bur_prop_active_credits_past']=(app_test_v2['bur_num_past_active']/
 app_test_v2['bur_prop_credits_past']=((app_test_v2['bur_num_past_active']+app_test_v2['bur_num_past_bad_debt']+app_test_v2['bur_num_past_closed']+app_test_v2['bur_num_past_sold'])/app_test_v2['bur_num_credits'])
 
 
-
-# In[14]:
-
-
 ## Features in the data set related to amounts
 bur_df['debt_credit_ratio']=bur_df['AMT_CREDIT_SUM_DEBT']/bur_df['AMT_CREDIT_SUM']
 bur_df['credit_creditlimit_ratio']=bur_df['AMT_CREDIT_SUM']/bur_df['AMT_CREDIT_SUM_LIMIT']
@@ -251,9 +193,6 @@ bur_df['debt_span_ratio']=bur_df['AMT_CREDIT_SUM_DEBT']/bur_df['span_credit']
 bur_df['DPD_past_90']=np.where(bur_df['CREDIT_DAY_OVERDUE']>90,1,0)
 bur_df['DPD_btwn_60_90']=np.where((bur_df['CREDIT_DAY_OVERDUE']>60)&(bur_df['CREDIT_DAY_OVERDUE']<=90),1,0)
 bur_df['DPD_btwn_30_60']=np.where((bur_df['CREDIT_DAY_OVERDUE']>30)&(bur_df['CREDIT_DAY_OVERDUE']<=60),1,0)
-
-
-# In[15]:
 
 
 BUREAU_AGGREGATION_RECIPIES = [('CREDIT_TYPE', 'count'),
@@ -283,9 +222,6 @@ for agg in ['mean', 'min', 'max', 'sum', 'var']:
 BUREAU_AGGREGATION_RECIPIES = [(['SK_ID_CURR'], BUREAU_AGGREGATION_RECIPIES)]
 
 
-# In[16]:
-
-
 groupby_aggregate_names = []
 for groupby_cols, specs in tqdm(BUREAU_AGGREGATION_RECIPIES):
     group_object = bur_df.groupby(groupby_cols)
@@ -300,10 +236,6 @@ for groupby_cols, specs in tqdm(BUREAU_AGGREGATION_RECIPIES):
                               on=groupby_cols,
                               how='left')
         groupby_aggregate_names.append(groupby_aggregate_name)
-
-
-# In[17]:
-
 
 groupby_aggregate_names = []
 for groupby_cols, specs in tqdm(BUREAU_AGGREGATION_RECIPIES):
@@ -320,23 +252,12 @@ for groupby_cols, specs in tqdm(BUREAU_AGGREGATION_RECIPIES):
                               how='left')
         groupby_aggregate_names.append(groupby_aggregate_name)
 
-
-# In[18]:
-
-
 app_df_v2.shape,app_test_v2.shape
-
-
-# In[19]:
-
 
 # read the input files and look at the top few lines #
 data_path = "/Users/venkatasravankanukolanu/Documents/Data Files/home_credit_kaggle/"
 bubal_df= pd.read_csv(data_path+"bureau_balance.csv")
 bubal_df.head(2)
-
-
-# In[20]:
 
 
 ### Number of months in each status
@@ -360,16 +281,9 @@ for cols in list(first_month_for_status)[1:]:
     temp=temp.merge(x[['SK_ID_BUREAU',cols]],how='left',on='SK_ID_BUREAU')
 temp.columns=['SK_ID_BUREAU','bubal_first_inst_with_S0','bubal_first_inst_with_S1','bubal_first_inst_with_S2','bubal_first_inst_with_S3','bubal_first_inst_with_S4','bubal_first_inst_with_S5','bubal_first_inst_with_SC','bubal_first_inst_with_SX']
 
-
-# In[21]:
-
-
 #Merge all the features computed from Bureau_balance
 bubal_feat_list=[bur_df,bubal_num_months_Status,bubal_num_different_statuses,temp]
 bubal_feat = reduce(lambda left,right: pd.merge(left,right,how='left',on='SK_ID_BUREAU'), bubal_feat_list)
-
-
-# In[22]:
 
 
 BUBAL_AGGREGATION_RECIPIES = []
@@ -389,9 +303,6 @@ for agg in ['mean', 'min', 'max', 'sum', 'var']:
 BUBAL_AGGREGATION_RECIPIES = [(['SK_ID_CURR'], BUBAL_AGGREGATION_RECIPIES)]
 
 
-# In[23]:
-
-
 groupby_aggregate_names = []
 for groupby_cols, specs in tqdm(BUBAL_AGGREGATION_RECIPIES):
     group_object = bubal_feat.groupby(groupby_cols)
@@ -408,9 +319,6 @@ for groupby_cols, specs in tqdm(BUBAL_AGGREGATION_RECIPIES):
         groupby_aggregate_names.append(groupby_aggregate_name)
 
 
-# In[24]:
-
-
 groupby_aggregate_names = []
 for groupby_cols, specs in tqdm(BUBAL_AGGREGATION_RECIPIES):
     group_object = bubal_feat.groupby(groupby_cols)
@@ -425,16 +333,9 @@ for groupby_cols, specs in tqdm(BUBAL_AGGREGATION_RECIPIES):
                               on=groupby_cols,
                               how='left')
         groupby_aggregate_names.append(groupby_aggregate_name)
-
-
-# In[25]:
-
+        
 
 app_test_v2.to_csv(data_path+"app_test_v2.csv", index = False)
-
-
-# In[26]:
-
 
 app_df_v2.to_csv(data_path+"app_df_v2.csv", index = False)
 
