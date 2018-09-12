@@ -1,19 +1,3 @@
-
-# coding: utf-8
-
-# In[1]:
-
-
-from IPython import get_ipython
-get_ipython().magic('reset -sf')
-
-import warnings
-warnings.filterwarnings('ignore')
-
-
-# In[2]:
-
-
 from sklearn.metrics import confusion_matrix
 import itertools
 import pandas as pd
@@ -50,10 +34,6 @@ get_ipython().run_line_magic('matplotlib', 'inline')
 pd.set_option('display.max_columns', 50)
 pd.set_option('display.max_columns', 100)
 
-
-# In[3]:
-
-
 import logging
 import os
 import random
@@ -65,12 +45,7 @@ import glob
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-#import yaml
 from attrdict import AttrDict
-
-
-# In[4]:
-
 
 # read the input files and look at the top few lines #
 data_path = "/Users/venkatasravankanukolanu/Documents/Data Files/home_credit_kaggle/"
@@ -78,17 +53,10 @@ app_fe2_df= pd.read_csv(data_path+"app_df_v5.csv")
 apptest_fe2_df= pd.read_csv(data_path+"app_test_v5.csv")
 
 
-# In[5]:
-
-
 # read the input files and look at the top few lines #
 data_path = "/Users/venkatasravankanukolanu/Documents/Data Files/home_credit_kaggle/"
 inst_payments= pd.read_csv(data_path+"installments_payments.csv")
 inst_payments.head(2)
-
-
-# In[6]:
-
 
 ### Difference in instalment payment to actual payment made
 inst_payments['diff_payment']=(inst_payments['AMT_PAYMENT']-inst_payments['AMT_INSTALMENT'])
@@ -98,10 +66,6 @@ inst_payments['diff_days']=((-1*inst_payments['DAYS_ENTRY_PAYMENT'])-(-1*inst_pa
 
 inst_payments['instalment_paid_late'] = (inst_payments['diff_days'] > 0).astype(int)
 inst_payments['instalment_paid_over'] = (inst_payments['diff_payment'] > 0).astype(int)
-
-
-# In[7]:
-
 
 INSTALLMENTS_PAYMENTS_AGGREGATION_RECIPIES = []
 for agg in ['mean', 'min', 'max', 'sum', 'var']:
@@ -116,9 +80,6 @@ for agg in ['mean', 'min', 'max', 'sum', 'var']:
                    ]:
         INSTALLMENTS_PAYMENTS_AGGREGATION_RECIPIES.append((select, agg))
 INSTALLMENTS_PAYMENTS_AGGREGATION_RECIPIES = [(['SK_ID_CURR'], INSTALLMENTS_PAYMENTS_AGGREGATION_RECIPIES)]
-
-
-# In[8]:
 
 
 groupby_aggregate_names = []
@@ -136,10 +97,6 @@ for groupby_cols, specs in tqdm(INSTALLMENTS_PAYMENTS_AGGREGATION_RECIPIES):
                               how='left')
         groupby_aggregate_names.append(groupby_aggregate_name)
 
-
-# In[9]:
-
-
 groupby_aggregate_names = []
 for groupby_cols, specs in tqdm(INSTALLMENTS_PAYMENTS_AGGREGATION_RECIPIES):
     group_object = inst_payments.groupby(groupby_cols)
@@ -156,23 +113,7 @@ for groupby_cols, specs in tqdm(INSTALLMENTS_PAYMENTS_AGGREGATION_RECIPIES):
         groupby_aggregate_names.append(groupby_aggregate_name)
 
 
-# In[10]:
-
-
-apptest_fe2_df.to_csv(data_path+"app_test_v6.csv", index = False)
-
-
-# In[11]:
-
-
-app_fe2_df.to_csv(data_path+"app_df_v6.csv", index = False)
-
-
 # #### Aggregates from last k instalments
-
-# In[12]:
-
-
 def parallel_apply(groups, func, index_name='Index', num_workers=1, chunk_size=1000):
     n_chunks = np.ceil(1.0 * groups.ngroups / chunk_size)
     indeces, features  = [],[]
@@ -197,10 +138,6 @@ def chunk_groups(groupby_object, chunk_size):
             group_chunk_, index_chunk_ = group_chunk.copy(), index_chunk.copy()
             group_chunk, index_chunk = [],[]
             yield index_chunk_, group_chunk_
-
-
-# In[13]:
-
 
 def add_features(feature_name, aggs, features, feature_names, groupby):
     feature_names.extend(['{}_{}'.format(feature_name, agg) for agg in aggs])
@@ -245,15 +182,8 @@ def add_features_in_group(features, gr_, feature_name, aggs, prefix):
     return features
 
 
-# In[15]:
-
-
 features = pd.DataFrame({'SK_ID_CURR':inst_payments['SK_ID_CURR'].unique()})
 groupby = inst_payments.groupby(['SK_ID_CURR'])
-
-
-# In[16]:
-
 
 feature_names = []
 
@@ -275,14 +205,7 @@ features, feature_names = add_features('diff_payment',
 features, feature_names = add_features('instalment_paid_over', ['sum','mean'],
                                      features, feature_names, groupby)
 
-
-# In[17]:
-
-
 features.shape
-
-
-# In[18]:
 
 
 def last_k_instalment_features(gr,periods):
@@ -313,10 +236,6 @@ def last_k_instalment_features(gr,periods):
     
     return features
 
-
-# In[19]:
-
-
 func = partial(last_k_instalment_features, periods=[1,5,10,20,50,100])
 
 g = parallel_apply(groupby, func, index_name='SK_ID_CURR',
@@ -326,33 +245,10 @@ features = features.merge(g, on='SK_ID_CURR', how='left')
 display(features.head())
 
 
-# In[20]:
-
-
 app_fe2_df = app_fe2_df.merge(features, on='SK_ID_CURR', how='left')
 apptest_fe2_df = apptest_fe2_df.merge(features, on='SK_ID_CURR', how='left')
 
-
-# In[21]:
-
-
 apptest_fe2_df.to_csv(data_path+"app_test_v7.csv", index = False)
 
-
-# In[22]:
-
-
 app_fe2_df.to_csv(data_path+"app_df_v7.csv", index = False)
-
-
-# In[23]:
-
-
-app_fe2_df.shape
-
-
-# In[24]:
-
-
-apptest_fe2_df.shape
 
